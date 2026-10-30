@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#153b36">
+  <title>Street Recall</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="./" aria-label="Street Recall home"><span class="brand-mark" aria-hidden="true">↗</span> STREET RECALL</a>
+    <div class="city-switcher">
+      <label for="city-select">STUDY CITY</label>
+      <select id="city-select"><option value="pendleton">Pendleton, Oregon</option><option value="portland">Portland, Oregon</option></select>
+      <span id="city-status" role="status"></span>
+    </div>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">LEARN YOUR WAY AROUND</p>
+      <h1>A familiar place.<br>A little less familiar.</h1>
+      <p class="description">One highlighted street. Can you name it?<br>Find your bearings, then see what you remember.</p>
+    </section>
+    <div id="storage-warning" class="warning" role="alert" hidden></div>
+    <section class="area-picker" aria-labelledby="area-heading">
+      <div class="area-heading"><div><p class="eyebrow">BUILD YOUR SESSION</p><h2 id="area-heading">Choose your study areas</h2></div><p id="area-description">Geographic study zones, not official neighborhoods. Major throughways and central areas introduce first; combine areas without losing your review history.</p></div>
+      <form id="area-form">
+        <fieldset id="area-options" disabled>
+          <legend class="visually-hidden">Areas to include in this study session</legend>
+          <div id="area-choices" class="area-choices">Loading study areas…</div>
+          <div class="area-actions"><button id="select-all-areas" type="button">Select all areas</button><button id="apply-areas" class="primary" type="submit">Apply study areas</button></div>
+        </fieldset>
+      </form>
+      <p id="area-status" class="area-status" role="status"></p>
+    </section>
+    <section class="study-layout" aria-label="Street review">
+      <div class="map-card">
+        <div class="map-heading"><div><span class="eyebrow">YOUR STUDY AREA</span><h2 id="map-area-title">Downtown Pendleton</h2></div><span id="label-badge" class="map-badge">NAMES HIDDEN</span></div>
+        <div class="map-options">
+          <label class="label-toggle" for="show-other-names"><input id="show-other-names" type="checkbox"> Show other street names</label>
+          <p id="label-setting-status" role="status"></p>
+        </div>
+        <div class="map-surface">
+          <canvas id="map-canvas" aria-hidden="true"></canvas>
+          <svg id="map" viewBox="0 0 1000 800" role="img" aria-label="Pendleton street map with street names hidden. The street to recall is highlighted in orange."><title>Pendleton street recall map</title></svg>
+          <div class="compass" aria-hidden="true"><span>N</span>↑</div>
+          <div class="map-controls" aria-label="Map controls">
+            <button id="zoom-in" aria-label="Zoom in" disabled>+</button>
+            <button id="zoom-out" aria-label="Zoom out" disabled>−</button>
+            <button id="reset-map" aria-label="Reset map view" disabled>↺</button>
+          </div>
+          <div class="map-key"><span></span> Street to remember</div>
+        </div>
+        <div class="map-footer"><span>Map follows the street · ↺ shows selected areas</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors · ODbL</a></div>
+      </div>
+      <aside class="review-card">
+        <p class="eyebrow">YOUR NEXT STREET</p>
+        <div id="question-panel">
+          <h2>What street<br>is this?</h2>
+          <p class="hint">Follow the orange line. Take a moment to picture where you are.</p>
+          <label for="guess">Your guess <span>(optional)</span></label>
+          <input id="guess" type="text" placeholder="Think it, or type it…" autocomplete="off" spellcheck="false" disabled>
+          <button id="reveal" class="primary" disabled>Loading street map…</button>
+          <p class="keyboard-hint">Press Enter to reveal</p>
+        </div>
+        <div id="answer-panel" hidden aria-live="polite">
+          <p class="answer-label">THE HIGHLIGHTED STREET IS</p>
+          <h2 id="answer"></h2>
+          <p class="hint">How well did you remember? You decide; spelling doesn’t count.</p>
+          <div id="ratings" class="ratings" aria-label="Rate your recall"></div>
+          <p class="keyboard-hint">Keys 1–4 to rate your recall</p>
+        </div>
+        <div id="complete-panel" hidden aria-live="polite">
+          <h2 id="complete-title">You’re all caught up.</h2>
+          <p class="hint" id="next-review"></p>
+          <button id="check-due" class="primary">Check for due streets</button>
+        </div>
+        <p id="review-feedback" class="review-feedback" role="status"></p>
+        <div class="session-note"><span class="status-dot"></span><span id="save-status">Progress saved in this browser</span></div>
+      </aside>
+    </section>
+    <section class="progress" aria-label="Deck progress">
+      <div><strong id="new-count">—</strong><span>new streets</span></div>
+      <div><strong id="due-count">—</strong><span>due now</span></div>
+      <div><strong id="learned-count">—</strong><span>introduced</span></div>
+      <div><strong id="session-count">0</strong><span>reviews this visit</span></div>
+    </section>
+    <footer class="page-footer"><p>A small daily practice. A better mental map.</p><p id="deck-detail">Bundled map · no account needed</p><p id="boundary-credit" hidden>Precinct boundaries: <a href="https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/18" target="_blank" rel="noopener">City of Portland / Portland Police Bureau</a>.</p><p>Progress is local to this browser, not synced. Clearing site data removes it.</p></footer>
+  </main>
+  <noscript><p class="warning">Enable JavaScript to load the map and save reviews.</p></noscript>
+</body>
+</html>
