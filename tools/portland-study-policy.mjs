@@ -9,9 +9,5 @@ export function classifyPortlandStreet(name, metersByClass) {
   const numbered = NUMBERED_STREET.test(name);
   if (numbered && roadClass === 'tertiary') return null;
 
-  // Named arterials first; major numbered arterials remain in the curriculum.
-  const priority = numbered
-    ? (roadClass === 'primary' ? 2 : 4)
-    : ({ primary: 0, secondary: 1, tertiary: 3 })[roadClass];
-  return { roadClass, numbered, priority };
+  return { roadClass, numbered };
 }

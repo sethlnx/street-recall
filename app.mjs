@@ -10,7 +10,7 @@ const CITIES = {
     labelsKey: 'street-recall:pendleton-downtown:other-names',
     areasKey: 'street-recall:pendleton:areas:v1',
     allAreasTitle: 'All Pendleton areas',
-    areaDescription: 'Geographic study zones, not official neighborhoods. Major throughways and central areas introduce first; combine areas without losing your review history.',
+    areaDescription: 'Geographic study zones, not official neighborhoods. The most important roads introduce first; combine areas without losing your review history.',
   },
   portland: {
     name: 'Portland', label: 'Portland, Oregon', defaultAreas: ['central'],
@@ -18,7 +18,7 @@ const CITIES = {
     labelsKey: 'street-recall:portland:other-names',
     areasKey: 'street-recall:portland:areas:v1',
     allAreasTitle: 'All Portland precincts',
-    areaDescription: 'Official Portland Police precincts. Named arterials first; major numbered roads and named collectors follow. Minor streets are map context, not cards.',
+    areaDescription: 'Official Portland Police precincts. The most important roads introduce first. Minor streets are map context, not cards.',
   },
 };
 const CITY_KEY = 'street-recall:city';

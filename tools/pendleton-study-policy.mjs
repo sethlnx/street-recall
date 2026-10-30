@@ -1,10 +1,10 @@
 const MAJOR_CLASSES = ['primary', 'secondary', 'tertiary'];
-const CENTRAL_AREAS = ['south', 'southwest', 'north', 'east'];
 
-// Order Pendleton introductions by major throughways and important areas first:
-// primary, secondary, and tertiary corridors lead (Downtown first, then central
-// neighborhoods, then West & airport), followed by Downtown and neighborhood
-// throughways/streets, and finally outlying rural/airport unclassified roads.
+// Decide whether a Pendleton street is a study card and which OSM road class it
+// counts as. Major throughways (primary, secondary, tertiary) need at least
+// 90 m of that class; a tertiary road that spans several areas still counts as
+// tertiary; Downtown streets and streets with 90 m of residential, living-street
+// or unclassified road are local cards. Card order comes from street-rank.mjs.
 export function classifyPendletonStreet(name, metersByClass, areaIds) {
   const areaSet = new Set(areaIds);
   if (areaSet.size === 0) return null;
@@ -14,22 +14,7 @@ export function classifyPendletonStreet(name, metersByClass, areaIds) {
     ?? (areaSet.has('downtown') || (metersByClass.residential ?? 0) >= 90 || (metersByClass.living_street ?? 0) >= 90
       ? 'residential'
       : (metersByClass.unclassified ?? 0) >= 90 ? 'unclassified' : null);
-  if (!roadClass) return null;
-
-  const areaTier = areaSet.has('downtown') ? 0
-    : CENTRAL_AREAS.some(id => areaSet.has(id)) ? 1
-    : 2;
-
-  const priority = roadClass === 'primary' ? areaTier
-    : roadClass === 'secondary' ? 3 + areaTier
-    : roadClass === 'tertiary' ? 6 + areaTier
-    : roadClass === 'residential'
-      ? (areaTier === 0 ? (throughway ? 9 : 10)
-        : areaTier === 1 ? (throughway ? 11 : 12)
-        : 13)
-      : (areaTier <= 1 ? (throughway ? 14 : 15) : 16);
-
-  return { roadClass, areaTier, throughway, priority };
+  return roadClass ? { roadClass } : null;
 }
 
 

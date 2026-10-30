@@ -1,27 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { classifyPortlandStreet } from './tools/portland-study-policy.mjs';
-import { orderStudyStreets } from './study.mjs';
+import { rankStreetsByImportance } from './tools/street-rank.mjs';
+import { buildStudyDeck, orderStudyStreets } from './study.mjs';
 import { selectStreet } from './scheduler.mjs';
-
-const card = (id, meters) => ({ id, ...classifyPortlandStreet(id, meters) });
-
-test('named arterials introduce before numbered arterials and lower-ranked collectors', () => {
-  const streets = [
-    card('Northeast 33rd Avenue', { secondary: 1000 }),
-    card('North Mississippi Avenue', { tertiary: 1000 }),
-    card('Northeast 82nd Avenue', { primary: 1000 }),
-    card('Southeast Hawthorne Boulevard', { secondary: 1000 }),
-    card('West Burnside Street', { primary: 1000 }),
-  ];
-  const ordered = orderStudyStreets(streets, () => 0);
-  assert.deepEqual(ordered.map(street => street.id), [
-    'West Burnside Street', 'Southeast Hawthorne Boulevard',
-    'Northeast 82nd Avenue', 'North Mississippi Avenue', 'Northeast 33rd Avenue',
-  ]);
-  assert.equal(selectStreet(ordered, {}, 100).id, 'West Burnside Street');
-  assert.equal(streets[0].id, 'Northeast 33rd Avenue');
-});
 
 test('major numbered avenues stay while minor numbered collectors and residential roads are pruned', () => {
   assert.equal(classifyPortlandStreet('Southeast 82nd Avenue', { primary: 1200 }).roadClass, 'primary');
@@ -35,17 +18,27 @@ test('major numbered avenues stay while minor numbered collectors and residentia
 
 test('a tiny primary stub cannot promote a local road or outrank its meaningful secondary section', () => {
   assert.equal(classifyPortlandStreet('Local Road', { primary: 89, residential: 5000 }), null);
-  const secondary = classifyPortlandStreet('Mixed Road', { primary: 89, secondary: 90 });
-  assert.equal(secondary.roadClass, 'secondary');
-  assert.ok(secondary.priority > classifyPortlandStreet('Arterial Road', { primary: 90 }).priority);
+  assert.equal(classifyPortlandStreet('Mixed Road', { primary: 89, secondary: 90 }).roadClass, 'secondary');
 });
 
-test('due reviews still beat the highest-priority unseen major street', () => {
-  const streets = orderStudyStreets([
-    card('West Burnside Street', { primary: 1000 }),
-    card('Northeast 33rd Avenue', { secondary: 1000 }),
-  ], () => 0);
-  const cards = { 'Northeast 33rd Avenue': { due: 100 } };
-  assert.equal(selectStreet(streets, cards, 100).id, 'Northeast 33rd Avenue');
-  assert.equal(selectStreet(streets, cards, 99).id, 'West Burnside Street');
+test('bundled Portland cards are ordered by importance in every deck, and due reviews still go first', async () => {
+  const data = JSON.parse(await readFile(new URL('./data/portland.json', import.meta.url), 'utf8'));
+  assert.deepEqual(data.streets.map(street => street.priority), data.streets.map((_, rank) => rank));
+  assert.deepEqual(data.streets.map(street => street.name), rankStreetsByImportance(data.streets).map(street => street.name));
+  assert.equal(data.streets[0].roadClass, 'primary');
+  assert.equal(data.streets.at(-1).roadClass, 'tertiary');
+
+  const rankOf = new Map(data.streets.map(street => [street.id, street.priority]));
+  for (const areaIds of [['central'], ['north'], data.areas.map(area => area.id)]) {
+    const deck = orderStudyStreets(buildStudyDeck(data, areaIds).streets, () => 0);
+    assert.ok(deck.length > 0);
+    assert.deepEqual(deck.map(street => rankOf.get(street.id)),
+      deck.map(street => rankOf.get(street.id)).sort((a, b) => a - b));
+  }
+
+  const deck = orderStudyStreets(buildStudyDeck(data, data.areas.map(area => area.id)).streets, () => 0);
+  assert.equal(selectStreet(deck, {}, 100).id, data.streets[0].id);
+  const last = data.streets.at(-1).id;
+  assert.equal(selectStreet(deck, { [last]: { due: 100 } }, 100).id, last);
+  assert.equal(selectStreet(deck, { [last]: { due: 100 } }, 99).id, data.streets[0].id);
 });

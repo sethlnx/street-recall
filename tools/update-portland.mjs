@@ -9,6 +9,7 @@ import { parseArgs } from 'node:util';
 import { classifyPortlandStreet } from './portland-study-policy.mjs';
 import { connectPendletonStreets } from './pendleton-study-policy.mjs';
 import { mergeVariantStreets } from './street-variants.mjs';
+import { IMPORTANCE_POLICY, rankStreetsByImportance } from './street-rank.mjs';
 
 const { values } = parseArgs({ options: {
   endpoint: { type: 'string', default: 'https://overpass-api.de/api/interpreter' },
@@ -197,9 +198,9 @@ async function main() {
     // intersection gaps; precinct polygons clip in place of Pendleton's rectangles.
     const roads = [...roadsByKind].sort(([a], [b]) => a.localeCompare(b, 'en'))
       .map(([kind, lines]) => ({ kind, lines }));
-    const streets = connectPendletonStreets(eligibleStreets, roads,
+    const streets = rankStreetsByImportance(connectPendletonStreets(eligibleStreets, roads,
       areas.map(area => ({ id: area.id, bounds: prepared.get(area.id) })),
-      (line, area) => clipLinesToArea([line], area));
+      (line, area) => clipLinesToArea([line], area)));
     const streetsPerArea = Object.fromEntries(areas.map(area => [area.id,
       streets.filter(street => street.parts[area.id]?.length).length]));
     if (!streets.length || Object.values(streetsPerArea).some(count => !count)) {
@@ -215,10 +216,9 @@ async function main() {
         refreshCommand: 'node tools/update-portland.mjs', minimumPartMeters,
         eligibleHighways: [...majorHighways], labelHighways: [...labelHighways], contextHighways: [...contextHighways],
         studyPolicy: {
-          description: 'Named primary and secondary arterials first, then numbered primary arterials, named tertiary collectors, and numbered secondary arterials. Residential/local roads and numbered tertiary collectors are map context only.',
+          ...IMPORTANCE_POLICY,
           minimumMajorClassMeters: 90,
-          numberedHighways: ['primary', 'secondary'],
-          introductionOrder: ['named primary', 'named secondary', 'numbered primary', 'named tertiary', 'numbered secondary'],
+          eligibility: 'Primary and secondary arterials, and named tertiary collectors, with at least 90 mapped meters of that class inside Portland. Residential/local roads and numbered tertiary collectors are map context only.',
           mapLabelStreetCount: labels.length,
           classification: 'Highest OSM road class with at least 90 mapped meters inside Portland. Retained street names keep their full precinct-clipped geometry.',
         },
@@ -252,7 +252,8 @@ async function main() {
       fetchedAt: osm.fetchedAt, boundaryFetchedAt: official.fetchedAt,
       bytes: Buffer.byteLength(json), totalUniqueStreets: streets.length, streetsPerArea,
       mapLabelStreets: labels.length, variantMerges: variants.merges,
-      introductionTiers: Object.fromEntries([0, 1, 2, 3, 4].map(priority => [priority, streets.filter(street => street.priority === priority).length])),
+      roadClassCounts: Object.fromEntries(['primary', 'secondary', 'tertiary'].map(roadClass => [roadClass, streets.filter(street => street.roadClass === roadClass).length])),
+      mostImportant: streets.slice(0, 5).map(street => street.name),
       districtCount: features.length, highwayWayCount, riverWayCount,
       osmEndpoint: osm.endpoint, boundaryEndpoint: official.endpoint,
     }, null, 2));

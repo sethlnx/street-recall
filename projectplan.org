@@ -14,7 +14,7 @@ Learn street names from a map with the current street's name hidden, hosted on G
 - Reviews, selected areas, label preferences, and visit counts are separate per city. Existing Pendleton storage keys and ratings are retained. Unsaved in-memory reviews survive city changes during the same page visit.
 - Choose any combination of the active city's study areas, then press “Apply study areas.” Pendleton has six geographic areas and defaults to Downtown. Portland has three official police precincts and defaults to Central Precinct.
 - Area changes replace the current question and filter the due/new queue without deleting any saved ratings. Streets shared by areas are one card with one shared schedule.
-- Pendleton introduces major throughways (primary, secondary, and tertiary corridors) and central areas first—leading with Downtown, then central Pendleton neighborhoods, and finally outer West & airport and rural unclassified roads—while Portland introduces major named arterials before major numbered roads and named collectors. Within each tier, longer corridors in the selected areas come first; due reviews still take precedence over new cards.
+- New cards are introduced from the most important road to the least important: primary roads first, then secondary, tertiary, unclassified, and residential or living-street roads, with longer mapped roads first within each class (equal lengths by name). Every study area and precinct shows its streets in that one order. Due reviews still take precedence over new cards.
 - Selected areas choose which streets are in the deck, while the full mapped street (for example, all of =Northeast Halsey Street=) is highlighted. Other roads remain visible for geographic context.
 - The map focuses on the current street. Drag to pan and use the zoom buttons; reset shows the full extent of the selected areas.
 - Keyboard: Enter reveals from the guess field; 1–4 rate the revealed answer.
@@ -73,16 +73,7 @@ Pendleton areas are geographic study rectangles, not official neighborhood or mu
 | East Pendleton       |      51 | 45.639–45.712         | -118.779–-118.7495    |
 
 
-New-card introduction order:
-1. Primary throughways (Downtown first, then central Pendleton, then West & airport).
-2. Secondary throughways (Downtown, central Pendleton, West & airport).
-3. Tertiary collectors (Downtown, central Pendleton, West & airport).
-4. Downtown multi-area throughways, then Downtown single-area streets.
-5. Central Pendleton multi-area throughways, then central neighborhood streets.
-6. West & airport residential streets.
-7. Outlying rural and airport industrial unclassified roads.
-
-Within each tier, longer mapped corridors in the selected study areas come first. Equal-length ties are shuffled; reviewed/future cards are skipped and due reviews still lead. =tools/pendleton-study-policy.mjs= defines the tiers; =study.mjs= applies selected-area corridor ranking.
+New-card introduction order is the importance rank in =tools/street-rank.mjs=: OSM road class (primary, secondary, tertiary, unclassified, residential/living street), then total mapped length (longest first), then name. The rank is stored as each street's =priority= (0 = most important) and the streets are stored in that order, so every selected set of areas keeps the same relative order. Reviewed/future cards are skipped and due reviews still lead. =tools/pendleton-study-policy.mjs= decides which streets are cards and their road class.
 Refresh the bundled data with:
 #+begin_src sh
 node tools/update-map.mjs
@@ -113,14 +104,7 @@ node tools/update-portland.mjs
 #+end_src
 The generator fetches official district polygons and OSM roads, clips exact geometry, and atomically replaces the dataset only after successful generation. Source URLs, retrieval dates, road classes, and limitations are recorded in the bundle.
 
-New-card introduction tiers:
-1. Named primary arterials.
-2. Named secondary arterials.
-3. Numbered primary arterials.
-4. Named tertiary collectors.
-5. Numbered secondary arterials.
-
-Within each tier, longer mapped corridors in the selected precincts come first. Equal-length ties are shuffled; reviewed/future cards are skipped and due reviews still lead. =tools/portland-study-policy.mjs= defines eligibility and tiers; =study.mjs= applies selected-area corridor ranking. The data refresh command reapplies the policy.
+New-card introduction order is the same importance rank as Pendleton (=tools/street-rank.mjs=): primary, then secondary, then named tertiary collectors, longest first within a class. Named and numbered arterials are ranked together; major numbered roads such as 82nd and 122nd rank by class and length like any other. Reviewed/future cards are skipped and due reviews still lead. =tools/portland-study-policy.mjs= defines eligibility; the data refresh command reapplies the policy and the ranking.
 
 * Map rendering
 - =map-scene.mjs= projects and spatially indexes road polylines. Viewport queries retain crossing roads and shared junctions; zoom-banded simplification stays below the requested subpixel error.
@@ -147,7 +131,7 @@ node --test scheduler.test.mjs study.test.mjs precinct-geometry.test.mjs pendlet
 #+end_src
 Scheduler tests cover learning graduation, interval growth, lapse recovery, ease limits, due-before-new selection, completion, and invalid stored schedules. Study-deck tests cover full-street highlight geometry for selected areas, deduplicating shared streets, area bounds, empty decks, invalid selections, and source-data immutability.
 Polygon tests cover concave/diagonal boundaries, entering/exiting intersections, holes, disjoint/overlapping polygons, collinear/shared boundaries, outside excursions, precision, and source immutability.
-Portland curriculum tests cover pruning local/minor numbered streets, retaining major numbered arterials, minimum meaningful major-road length, introduction tier precedence, longer selected corridors within a tier, and due-review precedence.
+Portland curriculum tests cover pruning local/minor numbered streets, retaining major numbered arterials, minimum meaningful major-road length, the importance order in every deck, and due-review precedence.
 Spatial scene tests cover viewport crossings and empty bends, simplification error/endpoints/junctions, zoom-cache reuse, lazy label preparation, disconnected/reversed/branched/closed chains, visible label fitting, upright text, and source immutability.
 
 
@@ -157,7 +141,7 @@ Label checks covered the fresh hidden-name default, remembered explicit choices,
 
 City browser checks exercised all three Portland precincts, combined precincts, saved city/area/label choices, isolated ratings in both cities, reload persistence, failed-load recovery, loading-time rating guards, rapid switching, and preservation of unsaved in-memory reviews. The real bundled Portland street vertices and segment midpoints were checked against their assigned precinct polygons with no outside points found.
 
-Curriculum browser checks exercised first cards in all Pendleton study areas and Portland precincts, introduction-tier transitions (major throughways and central areas in Pendleton; named and numbered arterials in Portland), due-before-new behavior, preservation of retired-card ratings, completion ignoring retired due cards, and retained minor-street map labels. All 255 Pendleton streets and 33 Downtown IDs remain available.
+Ranking tests cover class-then-length-then-name ordering, rejection of unknown road classes, and that every Pendleton and Portland deck keeps the stored importance order.
 
 Renderer browser checks exercised answer hiding before reveal and after card changes, label toggles, saved ratings, 200 input updates coalesced into one frame, mouse/touch panning, zoom/reset, mobile layout, high-DPI changes/capping, highlight/background alignment, precinct counts, and city teardown/recreation.
 

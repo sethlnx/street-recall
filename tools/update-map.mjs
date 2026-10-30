@@ -6,6 +6,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { classifyPendletonStreet, connectPendletonStreets } from './pendleton-study-policy.mjs';
 import { mergeVariantStreets } from './street-variants.mjs';
+import { IMPORTANCE_POLICY, rankStreetsByImportance } from './street-rank.mjs';
 
 const destination = new URL('../data/pendleton.json', import.meta.url);
 const endpoint = 'https://overpass-api.de/api/interpreter';
@@ -196,7 +197,7 @@ async function main() {
   rawStreets.sort((a, b) => a.name.localeCompare(b.name, 'en'));
   const roads = [...roadsByKind].sort(([a], [b]) => a.localeCompare(b, 'en'))
     .map(([kind, lines]) => ({ kind, lines }));
-  const streets = connectPendletonStreets(rawStreets, roads, areas, clipLine);
+  const streets = rankStreetsByImportance(connectPendletonStreets(rawStreets, roads, areas, clipLine));
   if (!streets.length) throw new Error('Overpass returned no eligible study streets; refusing to replace dataset');
   const data = {
     title: 'Pendleton, Oregon',
@@ -215,18 +216,8 @@ async function main() {
       minimumPartMeters,
       eligibleHighways: [...eligibleHighways],
       studyPolicy: {
-        description: 'Major throughways (primary, secondary, tertiary) first, ordered by area importance (Downtown, central Pendleton neighborhoods, West & airport), followed by Downtown and neighborhood multi-area throughways and local streets, with outlying rural and airport unclassified roads last.',
+        ...IMPORTANCE_POLICY,
         minimumMajorClassMeters: 90,
-        areaTiers: ['downtown', 'south/southwest/north/east', 'west'],
-        introductionOrder: [
-          'primary throughways (Downtown, central, West & airport)',
-          'secondary throughways (Downtown, central, West & airport)',
-          'tertiary collectors (Downtown, central, West & airport)',
-          'Downtown multi-area throughways and local streets',
-          'central neighborhood multi-area throughways and local streets',
-          'West & airport residential streets',
-          'outlying and airport unclassified roads',
-        ],
       },
       geometry: 'OSM way geometry clipped to study bounds and descriptive study rectangles, with continuous street polylines reconnected across sub-90m area corners, colinear unnamed road segments, shared highway concurrencies, and short cross-street doglegs; lengths measured on a sphere with mean Earth radius 6371008.8 m.',
     },
@@ -247,10 +238,9 @@ async function main() {
     totalUniqueStreets: streets.length,
     streetsPerArea: Object.fromEntries(areas.map(area => [area.id,
       streets.filter(street => street.parts[area.id]).length])),
-    introductionTiers: Object.fromEntries(
-      [...new Set(streets.map(street => street.priority))].sort((a, b) => a - b)
-        .map(priority => [priority, streets.filter(street => street.priority === priority).length]),
-    ),
+    roadClassCounts: Object.fromEntries([...new Set(streets.map(street => street.roadClass))]
+      .map(roadClass => [roadClass, streets.filter(street => street.roadClass === roadClass).length])),
+    mostImportant: streets.slice(0, 5).map(street => street.name),
     variantMerges: variants.merges,
     previousDowntownCount: previousDowntownIds.length,
     oldDowntownIdsMissing: previousDowntownIds.filter(id => !downtownIds.has(id)),
