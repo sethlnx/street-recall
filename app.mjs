@@ -336,7 +336,11 @@ document.addEventListener('keydown', event => {
 });
 
 async function loadCity(cityId) {
-  if (!Object.hasOwn(CITIES, cityId)) return;
+  if (!Object.hasOwn(CITIES, cityId)) {
+    $('city-select').value = activeCityId;
+    $('city-status').textContent = `“${cityId}” isn't available in this version of the app. Reload the page to update.`;
+    return;
+  }
   if (ready) {
     citySessions.set(activeCityId, {
       cards, canSave, sessionReviews, areaIds: selectedAreaIds,
