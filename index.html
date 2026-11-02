@@ -13,7 +13,7 @@
     <a class="brand" href="./" aria-label="Street Recall home"><span class="brand-mark" aria-hidden="true">↗</span> STREET RECALL</a>
     <div class="city-switcher">
       <label for="city-select">STUDY CITY</label>
-      <select id="city-select"><option value="pendleton">Pendleton, Oregon</option><option value="portland">Portland, Oregon</option></select>
+      <select id="city-select"><option value="pendleton">Pendleton, Oregon</option><option value="portland">Portland, Oregon</option><option value="eugene">Eugene, Oregon</option></select>
       <span id="city-status" role="status"></span>
     </div>
   </header>
@@ -87,7 +87,7 @@
       <div><strong id="learned-count">—</strong><span>introduced</span></div>
       <div><strong id="session-count">0</strong><span>reviews this visit</span></div>
     </section>
-    <footer class="page-footer"><p>A small daily practice. A better mental map.</p><p id="deck-detail">Bundled map · no account needed</p><p id="boundary-credit" hidden>Precinct boundaries: <a href="https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/18" target="_blank" rel="noopener">City of Portland / Portland Police Bureau</a>.</p><p>Progress is local to this browser, not synced. Clearing site data removes it.</p></footer>
+    <footer class="page-footer"><p>A small daily practice. A better mental map.</p><p id="deck-detail">Bundled map · no account needed</p><p id="boundary-credit" hidden><span id="boundary-credit-label"></span>: <a id="boundary-credit-link" target="_blank" rel="noopener"></a>.</p><p>Progress is local to this browser, not synced. Clearing site data removes it.</p></footer>
   </main>
   <noscript><p class="warning">Enable JavaScript to load the map and save reviews.</p></noscript>
 </body>

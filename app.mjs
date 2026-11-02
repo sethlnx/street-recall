@@ -19,6 +19,16 @@ const CITIES = {
     areasKey: 'street-recall:portland:areas:v1',
     allAreasTitle: 'All Portland precincts',
     areaDescription: 'Official Portland Police precincts. The most important roads introduce first. Minor streets are map context, not cards.',
+    credit: { label: 'Precinct boundaries', text: 'City of Portland / Portland Police Bureau', url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/18' },
+  },
+  eugene: {
+    name: 'Eugene', label: 'Eugene, Oregon', defaultAreas: ['ward-3'],
+    progressKey: 'street-recall:eugene:v1',
+    labelsKey: 'street-recall:eugene:other-names',
+    areasKey: 'street-recall:eugene:areas:v1',
+    allAreasTitle: 'All Eugene wards',
+    areaDescription: 'Official City of Eugene City Council wards. The most important roads introduce first. Minor streets are map context, not cards.',
+    credit: { label: 'Ward boundaries', text: 'City of Eugene', url: 'https://gis.eugene-or.gov/arcgis/rest/services/Common/EugeneBoundaries/MapServer/2' },
   },
 };
 const CITY_KEY = 'street-recall:city';
@@ -393,7 +403,12 @@ async function loadCity(cityId) {
     }
     document.title = `${city.name} · Street Recall`;
     $('area-description').textContent = city.areaDescription;
-    $('boundary-credit').hidden = cityId !== 'portland';
+    $('boundary-credit').hidden = !city.credit;
+    if (city.credit) {
+      $('boundary-credit-label').textContent = city.credit.label;
+      $('boundary-credit-link').textContent = city.credit.text;
+      $('boundary-credit-link').href = city.credit.url;
+    }
     renderMap(data);
     createAreaChoices();
     applyStudyAreas(previous?.areaIds ?? loadAreaSelection());
